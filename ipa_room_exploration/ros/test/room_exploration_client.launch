@@ -4,10 +4,13 @@
         <arg name="env_pack" default="$(find ipa_env)" />
         <arg name="robot_env" default="$(optenv ROBOT_ENV !!NO_ROBOT_ENV_SET!!)"/>
         <arg name="robot_radius" default="0.5"/>
-        <arg name="coverage_radius" default="0.5"/>
+        <arg name="coverage_radius" default="0.25"/>
+        <arg name="planning_mode" default="1"/>
+        <!--1: plan for footprint, 2: plan for fov-->
         <arg name="use_test_maps" default="false"/>
         <arg name="image" default="carto_map.pgm"/>
         <arg name="yaml" default="carto_map.yaml"/>
+        <arg name="is_save_path" default="false"/>
  
         <!--  -->
         <node ns="room_exploration" pkg="ipa_room_exploration" type="room_exploration_client" name="room_exploration_client" output="screen">
@@ -18,6 +21,8 @@
                 <param name="coverage_radius" value="$(arg coverage_radius)"/>
                 <param name="use_test_maps" value="$(arg use_test_maps)"/>
                 <param name="image" value="$(arg image)"/>
+                <param name="planning_mode" value="$(arg planning_mode)"/>
+                <param name="is_save_path" value="$(arg is_save_path)"/>
         </node>
  
  

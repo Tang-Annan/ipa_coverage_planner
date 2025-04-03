@@ -22,10 +22,10 @@
 #include <Eigen/Dense>
 
 // overload of << operator for geometry_msgs::Pose2D to wanted format
-std::ostream& operator<<(std::ostream& os, const geometry_msgs::Pose2D& obj)
+std::ostream &operator<<(std::ostream &os, const geometry_msgs::Pose2D &obj)
 {
 	std::stringstream ss;
-	ss <<  "[" << obj.x << ", " << obj.y << ", " << obj.theta << "]";
+	ss << "[" << obj.x << ", " << obj.y << ", " << obj.theta << "]";
 	os << ss.rdbuf();
 	return os;
 }
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	priv_nh.param("use_test_maps", use_test_maps, true);
 	double resolution;
 	priv_nh.param("resolution", resolution, 0.05);
-	std::vector<double> origin (3,0);
+	std::vector<double> origin(3, 0);
 	priv_nh.param("origin", origin, origin);
 	double robot_radius;
 	priv_nh.param("robot_radius", robot_radius, 0.3);
@@ -78,6 +78,10 @@ int main(int argc, char **argv)
 	priv_nh.param("coverage_radius", coverage_radius, 1.0);
 	std::vector<double> start_pos = {0, 0, 0};
 	priv_nh.param("starting_position", start_pos, start_pos);
+	int planning_mode = 2; // 1: plan for footprint, 2: plan for fov
+	priv_nh.param("planning_mode", planning_mode, planning_mode);
+	bool is_save_path = true; // 1: plan for footprint, 2: plan for fov
+	priv_nh.param("is_save_path", is_save_path, is_save_path);
 
 	if (start_pos.size() != 3)
 	{
@@ -109,17 +113,17 @@ int main(int argc, char **argv)
 	cv::Mat map_flipped = cv::imread(image_path, 0);
 	cv::Mat map;
 	cv::flip(map_flipped, map, 0);
-	//make non-white pixels black
+	// make non-white pixels black
 	for (int y = 0; y < map.rows; y++)
 	{
 		for (int x = 0; x < map.cols; x++)
 		{
-			//find not reachable regions and make them black
+			// find not reachable regions and make them black
 			if (map.at<unsigned char>(y, x) < 250)
 			{
 				map.at<unsigned char>(y, x) = 0;
 			}
-			//else make it white
+			// else make it white
 			else
 			{
 				map.at<unsigned char>(y, x) = 255;
@@ -128,47 +132,47 @@ int main(int argc, char **argv)
 	}
 	std::cout << "map-size: " << map.rows << "x" << map.cols << std::endl;
 
-//	const std::string topic = "/move_base/global_costmap/costmap";
-//	nav_msgs::OccupancyGrid grid;
-//	grid = *(ros::topic::waitForMessage<nav_msgs::OccupancyGrid>(topic, nh));
-//	ROS_INFO("got grid");
-//	std::vector<signed char>& dats = grid.data;
-//	std::cout << dats.size() << std::endl;
-//	cv::Mat test_map = cv::Mat(grid.info.height, grid.info.width, map.type());
-//	for(size_t v = 0; v < test_map.rows; ++v)
-//		for(size_t u = 0; u < test_map.cols; ++u)
-//			test_map.at<uchar>(v,u) = (uchar)(2.55*(double)dats[v*grid.info.width+u]);
-//	cv::imshow("testtt", test_map);
-//	cv::waitKey();
+	//	const std::string topic = "/move_base/global_costmap/costmap";
+	//	nav_msgs::OccupancyGrid grid;
+	//	grid = *(ros::topic::waitForMessage<nav_msgs::OccupancyGrid>(topic, nh));
+	//	ROS_INFO("got grid");
+	//	std::vector<signed char>& dats = grid.data;
+	//	std::cout << dats.size() << std::endl;
+	//	cv::Mat test_map = cv::Mat(grid.info.height, grid.info.width, map.type());
+	//	for(size_t v = 0; v < test_map.rows; ++v)
+	//		for(size_t u = 0; u < test_map.cols; ++u)
+	//			test_map.at<uchar>(v,u) = (uchar)(2.55*(double)dats[v*grid.info.width+u]);
+	//	cv::imshow("testtt", test_map);
+	//	cv::waitKey();
 
 	ROS_INFO("Waiting for action server to start.");
 	// wait for the action server to start
-	ac.waitForServer(); //will wait for infinite time
+	ac.waitForServer(); // will wait for infinite time
 
 	ROS_INFO("Action server started, sending goal.");
 
 	DynamicReconfigureClient drc_exp(nh, "room_exploration_server/set_parameters", "room_exploration_server/parameter_updates");
 	drc_exp.setConfig("room_exploration_algorithm", 8);
 	drc_exp.setConfig("execute_path", false);
-//	drc_exp.setConfig("path_eps", 3);
-//	drc_exp.setConfig("grid_line_length", 15);
-//	drc_exp.setConfig("path_eps", 10);
-//	drc_exp.setConfig("cell_size", 10);
-//	drc_exp.setConfig("plan_for_footprint", true);
-//	drc_exp.setConfig("goal_eps", 0.0);
-//	drc_exp.setConfig("delta_theta", 0.005);
+	//	drc_exp.setConfig("path_eps", 3);
+	//	drc_exp.setConfig("grid_line_length", 15);
+	//	drc_exp.setConfig("path_eps", 10);
+	//	drc_exp.setConfig("cell_size", 10);
+	//	drc_exp.setConfig("plan_for_footprint", true);
+	//	drc_exp.setConfig("goal_eps", 0.0);
+	//	drc_exp.setConfig("delta_theta", 0.005);
 
-//	cv::Point2f src_center(map.cols/2.0F, map.rows/2.0F);
-//	cv::Mat rot_mat = getRotationMatrix2D(src_center, 180, 1.0);
-//	cv::Mat dst;
-//	cv::warpAffine(map, dst, rot_mat, map.size());
-//	cv::flip(dst, map, 1);
-//	cv::imshow("map", map);
-//	cv::waitKey();
+	//	cv::Point2f src_center(map.cols/2.0F, map.rows/2.0F);
+	//	cv::Mat rot_mat = getRotationMatrix2D(src_center, 180, 1.0);
+	//	cv::Mat dst;
+	//	cv::warpAffine(map, dst, rot_mat, map.size());
+	//	cv::flip(dst, map, 1);
+	//	cv::imshow("map", map);
+	//	cv::waitKey();
 
 	sensor_msgs::Image labeling;
 	cv_bridge::CvImage cv_image;
-//	cv_image.header.stamp = ros::Time::now();
+	//	cv_image.header.stamp = ros::Time::now();
 	cv_image.encoding = "mono8";
 	cv_image.image = map;
 	cv_image.toImageMsg(labeling);
@@ -184,33 +188,33 @@ int main(int argc, char **argv)
 	starting_position.theta = start_pos[2];
 
 	std::vector<geometry_msgs::Point32> fov_points(4);
-	fov_points[0].x = 0.04035;		// this field of view represents the off-center iMop floor wiping device
+	fov_points[0].x = 0.04035; // this field of view represents the off-center iMop floor wiping device
 	fov_points[0].y = -0.136;
 	fov_points[1].x = 0.04035;
 	fov_points[1].y = 0.364;
-	fov_points[2].x = 0.54035;		// todo: this definition is mirrored on x (y-coordinates are inverted) to work properly --> check why, make it work the intuitive way
+	fov_points[2].x = 0.54035; // todo: this definition is mirrored on x (y-coordinates are inverted) to work properly --> check why, make it work the intuitive way
 	fov_points[2].y = 0.364;
 	fov_points[3].x = 0.54035;
 	fov_points[3].y = -0.136;
-	int planning_mode = 2;	// viewpoint planning
-//	fov_points[0].x = 0.15;		// this field of view fits a Asus Xtion sensor mounted at 0.63m height (camera center) pointing downwards to the ground in a respective angle
-//	fov_points[0].y = 0.35;
-//	fov_points[1].x = 0.15;
-//	fov_points[1].y = -0.35;
-//	fov_points[2].x = 1.15;
-//	fov_points[2].y = -0.65;
-//	fov_points[3].x = 1.15;
-//	fov_points[3].y = 0.65;
-//	int planning_mode = 2;	// viewpoint planning
-//	fov_points[0].x = -0.3;		// this is the working area of a vacuum cleaner with 60 cm width
-//	fov_points[0].y = 0.3;
-//	fov_points[1].x = -0.3;
-//	fov_points[1].y = -0.3;
-//	fov_points[2].x = 0.3;
-//	fov_points[2].y = -0.3;
-//	fov_points[3].x = 0.3;
-//	fov_points[3].y = 0.3;
-//	int planning_mode = 1;	// footprint planning
+	// int planning_mode = 2;	// viewpoint planning
+	//	fov_points[0].x = 0.15;		// this field of view fits a Asus Xtion sensor mounted at 0.63m height (camera center) pointing downwards to the ground in a respective angle
+	//	fov_points[0].y = 0.35;
+	//	fov_points[1].x = 0.15;
+	//	fov_points[1].y = -0.35;
+	//	fov_points[2].x = 1.15;
+	//	fov_points[2].y = -0.65;
+	//	fov_points[3].x = 1.15;
+	//	fov_points[3].y = 0.65;
+	//	int planning_mode = 2;	// viewpoint planning
+	//	fov_points[0].x = -0.3;		// this is the working area of a vacuum cleaner with 60 cm width
+	//	fov_points[0].y = 0.3;
+	//	fov_points[1].x = -0.3;
+	//	fov_points[1].y = -0.3;
+	//	fov_points[2].x = 0.3;
+	//	fov_points[2].y = -0.3;
+	//	fov_points[3].x = 0.3;
+	//	fov_points[3].y = 0.3;
+	// int planning_mode = 1;	// footprint planning
 	geometry_msgs::Point32 fov_origin;
 	fov_origin.x = 0.;
 	fov_origin.y = 0.;
@@ -235,25 +239,37 @@ int main(int argc, char **argv)
 	// save path to file
 	auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	std::stringstream ss;
-	ss << "cpath_" << std::put_time(std::localtime(&t), "%F %T");
-	std::string file_path_ = "/home/tan/文档/coverage_path/" + image_name + "_" + ss.str();
-	// std::string file_path_ = "/home/tan/xju-robot/src/slam/path/" + file_name + ss.str();
-	if (check_file_exist(file_path_))
+	std::string mode;
+	ss
+		<< "cpath_" << std::put_time(std::localtime(&t), "%F %T");
+	if (planning_mode == 1)
 	{
-		ROS_INFO("File already exist, ignore this operation.");
-		return true;
-	}
-	ROS_INFO("Start recording path, save to %s", file_path_.c_str());
-
-	if (!write_file(file_path_, action_result->coverage_path))
-	{
-		ROS_INFO("Write file failed.");
+		mode = "footprint";
 	}
 	else
 	{
-		ROS_INFO("Keep teach path, save successful.");
+		mode = "viewpoint";
 	}
+	std::string file_path_ = "/home/tan/文档/coverage_path/" + image_name + "_" + mode + "_" + std::to_string(coverage_radius) + ss.str();
+	// std::string file_path_ = "/home/tan/xju-robot/src/slam/path/" + file_name + ss.str();
+	if(is_save_path){
+		if (check_file_exist(file_path_))
+		{
+			ROS_INFO("File already exist, ignore this operation.");
+			return true;
+		}
+		ROS_INFO("Start recording path, save to %s", file_path_.c_str());
 
+		if (!write_file(file_path_, action_result->coverage_path))
+		{
+			ROS_INFO("Write file failed.");
+		}
+		else
+		{
+			ROS_INFO("Save path successful.");
+		}
+	}
+	
 	// display path
 	const double inverse_map_resolution = 1. / goal.map_resolution;
 	cv::Mat path_map = map.clone();

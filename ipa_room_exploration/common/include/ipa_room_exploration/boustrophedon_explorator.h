@@ -302,6 +302,9 @@ protected:
 
 	void printCells(std::map<int, boost::shared_ptr<BoustrophedonCell> >& cell_index_mapping);
 
+	void visualizeCells(const cv::Mat &room_map, const std::vector<GeneralizedPolygon> &cell_polygons,
+						const cv::Mat &R, cv::Mat &cell_visualization);
+
 public:
 	// constructor
 	BoustrophedonExplorer();

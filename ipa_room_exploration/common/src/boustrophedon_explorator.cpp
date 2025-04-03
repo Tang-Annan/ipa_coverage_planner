@@ -67,6 +67,9 @@ void BoustrophedonExplorer::getExplorationPath(const cv::Mat& room_map, std::vec
 
 	ROS_INFO("Found the cells in the given map.");
 
+	// 可视化单元格
+	cv::Mat cell_visualization;
+	visualizeCells(room_map, cell_polygons, R, cell_visualization);
 
 	// *********************** IV. Determine the cell paths. ***********************
 	// determine the start cell that contains the start position
@@ -195,6 +198,77 @@ void BoustrophedonExplorer::getExplorationPath(const cv::Mat& room_map, std::vec
 #endif
 }
 
+void BoustrophedonExplorer::visualizeCells(const cv::Mat &room_map,
+										   const std::vector<GeneralizedPolygon> &cell_polygons,
+										   const cv::Mat &R,
+										   cv::Mat &cell_visualization)
+{
+	// 初始化输出图像
+	if (room_map.channels() == 1)
+	{
+		cv::cvtColor(room_map, cell_visualization, cv::COLOR_GRAY2BGR);
+	}
+	else
+	{
+		cell_visualization = room_map.clone();
+	}
+
+	if (!cell_polygons.empty())
+	{
+		// 用于存储已使用的颜色
+		std::vector<cv::Scalar> already_used_colors;
+
+		// 检查颜色是否已使用的辅助函数
+		auto contains = [](const std::vector<cv::Scalar> &colors, const cv::Scalar &color)
+		{
+			for (const auto &c : colors)
+			{
+				if (c[0] == color[0] && c[1] == color[1] && c[2] == color[2])
+					return true;
+			}
+			return false;
+		};
+
+		// 获取旋转矩阵的逆变换
+		cv::Mat R_inv;
+		cv::invertAffineTransform(R, R_inv);
+
+		// 为每个单元格生成颜色并绘制
+		for (size_t i = 0; i < cell_polygons.size(); ++i)
+		{
+			bool drawn = false;
+			int loop_counter = 0;
+			cv::Scalar fill_colour;
+
+			// 生成随机颜色并确保唯一性
+			do
+			{
+				loop_counter++;
+				fill_colour = cv::Scalar(rand() % 256, rand() % 256, rand() % 256); // RGB 随机颜色
+
+				if (!contains(already_used_colors, fill_colour) || loop_counter > 1000)
+				{
+					already_used_colors.push_back(fill_colour);
+					drawn = true;
+				}
+			} while (!drawn);
+
+			// 将多边形顶点变换回原始坐标系
+			std::vector<cv::Point> vertices = cell_polygons[i].getVertices();
+			std::vector<cv::Point> transformed_vertices;
+			cv::transform(vertices, transformed_vertices, R_inv);
+
+			// 绘制多边形
+			std::vector<std::vector<cv::Point>> polygon_points(1, transformed_vertices);
+			cv::fillPoly(cell_visualization, polygon_points, fill_colour);
+			cv::polylines(cell_visualization, polygon_points, true, cv::Scalar(0, 0, 0), 1);
+		}
+
+		// 显示可视化结果
+		cv::imshow("Cell Decomposition", cell_visualization);
+		cv::waitKey(0);
+	}
+}
 
 void BoustrophedonExplorer::findBestCellDecomposition(const cv::Mat& room_map, const float map_resolution, const double min_cell_area,
 		const int min_cell_width, cv::Mat& R, cv::Rect& bbox, cv::Mat& rotated_room_map,
@@ -944,6 +1018,16 @@ void BoustrophedonExplorer::computeBoustrophedonPath(const cv::Mat& room_map, co
 	for(std::vector<cv::Point>::iterator point=current_fov_path.begin(); point!=current_fov_path.end(); ++point)
 		fov_middlepoint_path_part.push_back(cv::Point2f(point->x, point->y));
 	cv::transform(fov_middlepoint_path_part, fov_middlepoint_path_part, R_cell_inv);
+
+	if (fov_middlepoint_path.size() > 0)
+	{
+		AStarPlanner path_planner;
+		std::vector<cv::Point> astar_panned_path_part;
+		path_planner.planPath(room_map, fov_middlepoint_path.back(), fov_middlepoint_path_part.front(), 1.0, 0.3, 0.05, 0,
+							  &astar_panned_path_part);
+		fov_middlepoint_path.insert(fov_middlepoint_path.end(), astar_panned_path_part.begin(), astar_panned_path_part.end());
+	}
+
 	fov_middlepoint_path.insert(fov_middlepoint_path.end(), fov_middlepoint_path_part.begin(), fov_middlepoint_path_part.end());
 
 #ifdef DEBUG_VISUALIZATION
