@@ -1,3 +1,23 @@
+这个仓库用来学习牛耕算法
+
+目前实现的功能：  
+1. 存储路径
+2. 单元格分区可视化
+3. 单元之间的路径用A*算法连接
+
+启动： 
+
+`roslaunch ipa_room_exploration room_exploration_action_server.launch`  
+`roslaunch ipa_room_exploration room_exploration_client.launch `
+
+`roslaunch ipa_room_segmentation room_segmentation_action_server.launch`  
+`roslaunch ipa_room_segmentation room_segmentation_action_client.launch`
+
+
+以下是原作者readme内容 
+
+---
+
 # ipa_coverage_planning
 Algorithms for floor plan segmentation and systematic coverage driving patterns.
 
