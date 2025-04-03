@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!--  -->
-  <node ns="room_segmentation" pkg="ipa_room_segmentation" type="room_segmentation_client" name="room_segmentation_client" output="screen"/>
+  <arg name="map_name" default="carto_map.pgm"/>
 
+  <!--  -->
+  <node ns="room_segmentation" pkg="ipa_room_segmentation" type="room_segmentation_client" name="room_segmentation_client" output="screen">
+    <param name="map_name" value="$(arg map_name)"/>
+  </node>
+  
 </launch>

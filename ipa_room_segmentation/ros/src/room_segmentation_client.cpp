@@ -80,6 +80,7 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "room_segmentation_client");
 	ros::NodeHandle nh;
+	ros::NodeHandle priv_nh("~");
 
 	// map names
 	std::vector< std::string > map_names;
@@ -127,8 +128,19 @@ int main(int argc, char **argv)
 	for (size_t image_index = 0; image_index<map_names.size(); ++image_index)
 	{
 		// import maps
-		std::string image_filename = ros::package::getPath("ipa_room_segmentation") + "/common/files/test_maps/" + map_names[image_index] + ".png";
+		// std::string image_filename = ros::package::getPath("ipa_room_segmentation") + "/common/files/test_maps/" + map_names[image_index] + ".png";
+		// cv::Mat map = cv::imread(image_filename.c_str(), 0);
+
+		std::string map_name;
+		priv_nh.param<std::string>("map_name", map_name, "lab_ipa");
+		std::string image_filename = ros::package::getPath("ipa_env") + "/envs/" + map_name ;
 		cv::Mat map = cv::imread(image_filename.c_str(), 0);
+		if (map.empty())
+		{
+			ROS_ERROR("Could not open or find the image: %s", image_filename.c_str());
+			return -1;
+		}
+
 		//make non-white pixels black
 		for (int y = 0; y < map.rows; y++)
 		{
@@ -164,8 +176,8 @@ int main(int argc, char **argv)
 		ROS_INFO("Action server started, sending goal.");
 
 		// test dynamic reconfigure
-		DynamicReconfigureClient drc(nh, "room_segmentation_server/set_parameters", "room_segmentation_server/parameter_updates");
-		drc.setConfig("room_segmentation_algorithm", 5);
+		// DynamicReconfigureClient drc(nh, "room_segmentation_server/set_parameters", "room_segmentation_server/parameter_updates");
+		// drc.setConfig("room_segmentation_algorithm", 5);
 //		drc.setConfig("display_segmented_map", true);
 		//drc.setConfig("room_area_factor_upper_limit_voronoi", 120.0);
 
